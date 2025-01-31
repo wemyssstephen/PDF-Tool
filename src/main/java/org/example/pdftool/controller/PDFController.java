@@ -1,13 +1,10 @@
 package org.example.pdftool.controller;
 
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.WritableImage;
-
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
-import java.awt.*;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -21,6 +18,8 @@ public class PDFController {
 
     public void loadPDFDocument(File file) throws IOException {
         if (document != null) {document.close();}
+
+        java.util.logging.Logger.getLogger("org.apache.fontbox.cff.Type1CharString").setLevel(java.util.logging.Level.SEVERE);
         document = Loader.loadPDF(file);
     }
 

@@ -2,7 +2,6 @@ package org.example.pdftool.view;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.VBox;
@@ -17,7 +16,7 @@ public class PDFDocumentView extends VBox {
     private final VBox pagesContainer;
     private final PDFController pdfController;
     private PDFRenderer renderer;
-    private static final int PRELOAD_PAGES = 1;
+    private int currentPage = 0;
 
     public PDFDocumentView(PDFController pdfController) {
         this.pdfController = pdfController;
@@ -32,11 +31,7 @@ public class PDFDocumentView extends VBox {
 
         // Listener for lazy loading
         scrollPane.vvalueProperty().addListener((observable, oldValue, newValue) -> {
-            try {
-                loadVisiblePages();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            checkPageChange();
         });
 
         // Add scroll pane to VBox
@@ -73,35 +68,80 @@ public class PDFDocumentView extends VBox {
             pagesContainer.getChildren().add(pageView);
         }
 
-        // Load visible pages
-        loadVisiblePages();
+        checkPageChange();
     }
 
-    private void loadVisiblePages() throws IOException {
-        // Measure view window
+    private void checkPageChange() {
+        // Get middle of viewport
         double viewportHeight = scrollPane.getViewportBounds().getHeight();
-        // Measure how far we have scrolled
-        double scrollY = scrollPane.getVvalue() * (pagesContainer.getHeight() - viewportHeight);
+        double contentHeight = pagesContainer.getHeight();
 
-        for (Node node : pagesContainer.getChildren()) {
-            // Case Node to PDFPageView, trust me Java!
-            PDFPageView pageView = (PDFPageView) node;
+        // Calculate current vertical offset in document
+        double vmin = scrollPane.getVmin();
+        double vmax = scrollPane.getVmax();
+        double vvalue = scrollPane.getVvalue();
 
-            // Calculate if page is visible
-            double pageTop = pageView.getBoundsInParent().getMinY();
-            double pageBottom = pageView.getBoundsInParent().getMaxY();
+        double voffset = Math.max(0, contentHeight - viewportHeight) *
+                        (vvalue - vmin) / (vmax - vmin);
 
-            boolean isVisible = (
-                    pageTop <= scrollY + viewportHeight + viewportHeight * PRELOAD_PAGES
-                    &&
-                    pageBottom >= scrollY - viewportHeight * PRELOAD_PAGES);
+        // Middle of viewport
+        double viewportMiddle = voffset + (viewportHeight / 2);
 
-            if (isVisible && !pageView.isRendered()) {
-                pageView.setImage(renderPage(pageView.getPageIndex()));
-                pageView.setRendered(true);
-            } else if (!isVisible && pageView.isRendered()) {
+        System.out.println("Current page: " + currentPage);
+        System.out.println("viewportMiddle: " + viewportMiddle);
+
+        if (currentPage < pagesContainer.getChildren().size() - 1) {
+            PDFPageView nextPage = (PDFPageView) pagesContainer.getChildren().get(currentPage + 1);
+            System.out.println("Next page: " + nextPage);
+            System.out.println("Next page top: " + nextPage.getBoundsInParent().getMinY());
+            if (nextPage.getBoundsInParent().getMinY() <= viewportMiddle) {
+                currentPage++;
+                try {loadPagesInRange();}
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+        }
+        if (currentPage > 0) {
+            PDFPageView previousPage = (PDFPageView) pagesContainer.getChildren().get(currentPage - 1);
+            if (previousPage.getBoundsInParent().getMaxY() > viewportMiddle) {
+                currentPage--;
+                try {loadPagesInRange();}
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+        }
+    }
+
+    private void loadPagesInRange() throws IOException {
+        int startPage = Math.max(0, currentPage - 3);
+        int endPage = Math.min(pdfController.getPageCount() - 1, currentPage + 3);
+
+        // Kill previous pages
+        if (startPage - 1 >= 0) {
+            PDFPageView pageView = (PDFPageView) pagesContainer.getChildren().get(startPage - 1);
+            if (pageView.isRendered()) {
                 pageView.setImage(null);
                 pageView.setRendered(false);
+            }
+        }
+        if (endPage + 1 <= pagesContainer.getChildren().size()) {
+            PDFPageView pageView = (PDFPageView) pagesContainer.getChildren().get(endPage + 1);
+            if (pageView.isRendered()) {
+                pageView.setImage(null);
+                pageView.setRendered(false);
+            }
+        }
+
+        // Load pages in range
+        for (int i = startPage; i <= endPage; i++) {
+            PDFPageView pageView = (PDFPageView) pagesContainer.getChildren().get(i);
+            if (!pageView.isRendered()) {
+                pageView.setImage(renderPage(i));
+                pageView.setRendered(true);
             }
         }
     }

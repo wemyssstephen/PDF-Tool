@@ -23,6 +23,13 @@ public class PDFController {
         document = Loader.loadPDF(file);
     }
 
+    public PDDocument getDocument() {
+        if (document == null) {
+            throw new IllegalStateException("No document has been loaded");
+        }
+        return document;
+    }
+
     public int getPageCount() {
         return document != null ? document.getNumberOfPages() : 0;
     }

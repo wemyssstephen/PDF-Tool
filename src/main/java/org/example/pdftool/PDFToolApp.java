@@ -6,7 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -20,7 +20,7 @@ public class PDFToolApp extends Application {
     // Class variables
     private PDFController pdfController;
     private PDFDocumentView documentView;
-    private final VBox root = new VBox();
+    private final BorderPane root = new BorderPane();
 
     // Menu variables
     Menu fileMenu = new Menu("File");
@@ -28,7 +28,7 @@ public class PDFToolApp extends Application {
     MenuItem saveItem = new MenuItem("Save PDF...");
     MenuItem exitItem = new MenuItem("Exit");
 
-    private void openPDF(Stage stage, VBox root) {
+    private void openPDF(Stage stage, BorderPane root) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open PDF");
         fileChooser.getExtensionFilters().add(
@@ -40,7 +40,7 @@ public class PDFToolApp extends Application {
             try {
                 pdfController.loadPDFDocument(file);
                 documentView.setupRenderer();
-                documentView.displayPDFPages();
+                documentView.displayCurrentPage();
             } catch (IOException e) {
                 // How to handle error?
                 e.printStackTrace();
@@ -71,7 +71,7 @@ public class PDFToolApp extends Application {
         menuBar.getMenus().add(fileMenu);
 
         // Add menu bar to root
-        root.getChildren().add(menuBar);
+        root.setTop(menuBar);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class PDFToolApp extends Application {
         setupMenuBar();
 
         // Add document view to root
-        root.getChildren().add(documentView);
+        root.setCenter(documentView);
 
         // Event handlers
         openItem.setOnAction(event -> openPDF(stage, root));

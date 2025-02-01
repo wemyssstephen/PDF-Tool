@@ -11,7 +11,6 @@ import org.example.pdftool.controller.PDFController;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseWheelEvent;
-import java.awt.geom.AffineTransform;
 import java.io.IOException;
 
 public class PDFDocumentView extends Pane {
@@ -55,29 +54,21 @@ public class PDFDocumentView extends Pane {
     }
 
     private void paintPDFContent(Graphics2D g, JPanel contentPanel) {
-        System.out.println("=== Painting PDF ===");
-        System.out.println("Panel size: " + contentPanel.getWidth() + "x" + contentPanel.getHeight());
-        System.out.println("Viewport position: " + viewport.getViewPosition());
         g.setColor(Color.GRAY);
         g.fillRect(0, 0, contentPanel.getWidth(), contentPanel.getHeight());
 
         if (renderer != null) {
             PDPage page = pdfController.getDocument().getPage(currentPage);
             PDRectangle cropBox = page.getCropBox();
-            AffineTransform at = g.getTransform();
 
             Dimension contentSize = calculateDimension(cropBox);
-            System.out.println("Content size: " + contentSize.width + "x" + contentSize.height);
             contentPanel.setPreferredSize(contentSize);
 
             // Calculate centre offset
             int xOffset = Math.max(0, (contentPanel.getWidth() - contentSize.width) / 2);
             int yOffset = Math.max(0, (contentPanel.getHeight() - contentSize.height) / 2);
 
-            System.out.println("Calculated offset: " + xOffset + "," + yOffset);
-
             Graphics2D pdfGraphics = (Graphics2D) g.create();
-
             try {
                 pdfGraphics.translate(xOffset, yOffset);
                 renderer.renderPageToGraphics(currentPage, pdfGraphics, (float) scale);
@@ -131,23 +122,26 @@ public class PDFDocumentView extends Pane {
     }
 
     private void handleZoom(MouseWheelEvent e) {
-        System.out.println("=== Zoom event ===");
-        System.out.println("Old zoom: " + zoomLevel);
+        System.out.println("\n=== Starting Zoom ===");
         Point mousePosition = e.getPoint();
+        System.out.println("Mouse position: " + mousePosition);
+
+        System.out.println("Current viewport size: " + viewport.getSize());
+        System.out.println("Current view size: " + viewport.getView().getSize());
+        System.out.println("Current preferred size: " + viewport.getView().getPreferredSize());
+        System.out.println("Current view position: " + viewport.getViewPosition());
+
         double oldZoomLevel = zoomLevel;
         zoomLevel = calculateZoomLevel(e);
+        System.out.println("Zoom changing from " + oldZoomLevel + " to " + zoomLevel);
 
-        Point viewPosition = scrollPane.getViewport().getViewPosition();
-
-        // Keep the mouse position stable during zoom
+        Point viewPosition = viewport.getViewPosition();
         double scaleFactor = zoomLevel / oldZoomLevel;
         Point newPosition = new Point(
-                (int)((viewPosition.x + mousePosition.x) * scaleFactor - mousePosition.x),
-                (int)((viewPosition.y + mousePosition.y) * scaleFactor - mousePosition.y)
+                (int) ((viewPosition.x + mousePosition.x) * scaleFactor - mousePosition.x),
+                (int) ((viewPosition.y + mousePosition.y) * scaleFactor - mousePosition.y)
         );
-
-        System.out.println("New zoom: " + zoomLevel);
-        System.out.println("New view position: " + newPosition);
+        System.out.println("Calculated new position: " + newPosition);
 
         viewport.setViewPosition(newPosition);
         viewport.getView().repaint();

@@ -11,13 +11,15 @@ import org.example.pdftool.controller.PDFController;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseWheelEvent;
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 
 public class PDFDocumentView extends Pane {
     private final SwingNode swingNode;
     private final PDFController pdfController;
-    private final JScrollPane panel;
+    private final JScrollPane scrollPane;
     private PDFRenderer renderer;
+    private JViewport viewport;
     private int currentPage = 0;
     private double scale = 1.0f;
     private double zoomLevel = 1;
@@ -29,14 +31,14 @@ public class PDFDocumentView extends Pane {
 
     public PDFDocumentView(PDFController pdfController) {
         this.pdfController = pdfController;
-        panel = createPanel();
+        scrollPane = createPanel();
         swingNode = createSwingNode();
         setupLayout();
         setupEventHandlers();
     }
 
     private JScrollPane createPanel() {
-        JPanel contentPanel = new JPanel() {
+        JPanel drawingSurface = new JPanel() {
             @Override
             public void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -44,42 +46,45 @@ public class PDFDocumentView extends Pane {
             }
         };
 
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        JScrollPane scrollPane = new JScrollPane(drawingSurface);
+        viewport = scrollPane.getViewport();
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
         return scrollPane;
     }
 
     private void paintPDFContent(Graphics2D g, JPanel contentPanel) {
+        System.out.println("=== Painting PDF ===");
+        System.out.println("Panel size: " + contentPanel.getWidth() + "x" + contentPanel.getHeight());
+        System.out.println("Viewport position: " + viewport.getViewPosition());
         g.setColor(Color.GRAY);
         g.fillRect(0, 0, contentPanel.getWidth(), contentPanel.getHeight());
 
         if (renderer != null) {
-            // Get central position
             PDPage page = pdfController.getDocument().getPage(currentPage);
             PDRectangle cropBox = page.getCropBox();
-            Dimension pdfSize = calculateDimension(cropBox);
+            AffineTransform at = g.getTransform();
 
-            // Equal space on all sides
-            int extraSpace = Math.max(pdfSize.width, pdfSize.height);
-            contentPanel.setPreferredSize(new Dimension(pdfSize.width + extraSpace, pdfSize.height + extraSpace));
+            Dimension contentSize = calculateDimension(cropBox);
+            System.out.println("Content size: " + contentSize.width + "x" + contentSize.height);
+            contentPanel.setPreferredSize(contentSize);
 
-            // Centre PDF in the space only on first load
-            int xCenter, yCenter;
-            if (isFirstLoad) {
-                xCenter = (contentPanel.getWidth() - pdfSize.width) / 2;
-                yCenter = (contentPanel.getHeight() - pdfSize.height) / 2;
-                isFirstLoad = false;
-            } else {
-                xCenter = extraSpace / 2;
-                yCenter = extraSpace / 2;
-            }
+            // Calculate centre offset
+            int xOffset = Math.max(0, (contentPanel.getWidth() - contentSize.width) / 2);
+            int yOffset = Math.max(0, (contentPanel.getHeight() - contentSize.height) / 2);
 
-            g.translate(xCenter, yCenter);
+            System.out.println("Calculated offset: " + xOffset + "," + yOffset);
+
+            Graphics2D pdfGraphics = (Graphics2D) g.create();
+
             try {
-                renderer.renderPageToGraphics(currentPage, g, (float) scale);
+                pdfGraphics.translate(xOffset, yOffset);
+                renderer.renderPageToGraphics(currentPage, pdfGraphics, (float) scale);
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                pdfGraphics.dispose();
             }
         }
     }
@@ -102,7 +107,7 @@ public class PDFDocumentView extends Pane {
 
     private SwingNode createSwingNode() {
         SwingNode swingNode = new SwingNode();
-        swingNode.setContent(panel);
+        swingNode.setContent(scrollPane);
         getChildren().add(swingNode);
         return swingNode;
     }
@@ -114,7 +119,7 @@ public class PDFDocumentView extends Pane {
     }
 
     private void setupEventHandlers() {
-        panel.addMouseWheelListener(this::handleMouseWheel);
+        scrollPane.addMouseWheelListener(this::handleMouseWheel);
     }
 
     private void handleMouseWheel(MouseWheelEvent e) {
@@ -126,38 +131,26 @@ public class PDFDocumentView extends Pane {
     }
 
     private void handleZoom(MouseWheelEvent e) {
+        System.out.println("=== Zoom event ===");
+        System.out.println("Old zoom: " + zoomLevel);
         Point mousePosition = e.getPoint();
         double oldZoomLevel = zoomLevel;
-
-        // Debug first zoom
-        if (isFirstLoad) {
-            System.out.println("First zoom:");
-            System.out.println("Mouse pos: " + mousePosition);
-            System.out.println("View pos: " + ((JScrollPane) e.getComponent()).getViewport().getViewPosition());
-            System.out.println("Old zoom: " + oldZoomLevel);
-        }
-
         zoomLevel = calculateZoomLevel(e);
 
-        JViewport viewport = ((JScrollPane) e.getComponent()).getViewport();
-        JPanel contentPanel = (JPanel) viewport.getView();
-        Point viewPosition = viewport.getViewPosition();
-        Point panelPosition = contentPanel.getLocation();
+        Point viewPosition = scrollPane.getViewport().getViewPosition();
 
-        System.out.println("contentPanel: " + contentPanel);
-        System.out.println("view position: " + viewPosition);
-
-        double documentX = (mousePosition.x + viewPosition.x - panelPosition.x) / oldZoomLevel;
-        double documentY = (mousePosition.y + viewPosition.y - panelPosition.y) / oldZoomLevel;
-
+        // Keep the mouse position stable during zoom
+        double scaleFactor = zoomLevel / oldZoomLevel;
         Point newPosition = new Point(
-            (int) (documentX * zoomLevel - mousePosition.x),
-            (int) (documentY * zoomLevel - mousePosition.y)
+                (int)((viewPosition.x + mousePosition.x) * scaleFactor - mousePosition.x),
+                (int)((viewPosition.y + mousePosition.y) * scaleFactor - mousePosition.y)
         );
 
+        System.out.println("New zoom: " + zoomLevel);
+        System.out.println("New view position: " + newPosition);
+
         viewport.setViewPosition(newPosition);
-        contentPanel.revalidate();
-        contentPanel.repaint();
+        viewport.getView().repaint();
     }
 
     private double calculateZoomLevel(MouseWheelEvent e) {
@@ -172,7 +165,7 @@ public class PDFDocumentView extends Pane {
     private void navigateToPage(int newPage) {
         if (newPage >= 0 && newPage < pdfController.getPageCount()) {
             currentPage = newPage;
-            panel.repaint();
+            scrollPane.repaint();
         }
     }
 
@@ -180,7 +173,7 @@ public class PDFDocumentView extends Pane {
     protected void layoutChildren() {
         super.layoutChildren();
         swingNode.resize(getWidth(), getHeight());
-        panel.setSize((int) getWidth(), (int) getHeight());
+        scrollPane.setSize((int) getWidth(), (int) getHeight());
     }
 
     // Create renderer
@@ -189,11 +182,11 @@ public class PDFDocumentView extends Pane {
     }
 
     public void displayCurrentPage() {
-        panel.repaint();
+        scrollPane.repaint();
     }
 
     public void centreDocument() {
         isFirstLoad = true;
-        panel.repaint();
+        scrollPane.repaint();
     }
 }

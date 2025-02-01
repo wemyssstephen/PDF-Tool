@@ -2,6 +2,7 @@ package org.example.pdftool;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -85,6 +86,7 @@ public class PDFToolApp extends Application {
 
         // Add document view to root
         root.setCenter(documentView);
+        BorderPane.setAlignment(documentView, Pos.CENTER);
 
         // Event handlers
         openItem.setOnAction(event -> openPDF(stage, root));

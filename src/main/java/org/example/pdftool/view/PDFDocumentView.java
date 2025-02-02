@@ -1,40 +1,41 @@
 package org.example.pdftool.view;
 
 import javafx.embed.swing.SwingFXUtils;
-import javafx.embed.swing.SwingNode;
 import javafx.scene.Group;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.example.pdftool.controller.PDFController;
 
-import javax.swing.*;
-import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.control.Label;
 
 public class PDFDocumentView extends Pane {
     private final PDFController pdfController;
     private final ZoomableScrollPane scrollPane;
     private PDFRenderer renderer;
-    private PageCounter pageCounter;
 
     private final ImageView pdfView;
     private final StackPane centrePane;
+    private PageCounter pageCounter;
+
+    private final Pane redactionLayer;
+    private RedactionTool currentRedaction;
+    private boolean redactionModeActive;
+    private double AnchorX;
+    private double AnchorY;
 
     public class ZoomableScrollPane extends ScrollPane {
         private double scaleValue = 1.0;
@@ -134,6 +135,15 @@ public class PDFDocumentView extends Pane {
         centrePane.setAlignment(Pos.CENTER);
         centrePane.getChildren().add(pdfView);
 
+        // Create redaction layer
+        redactionLayer = new Pane();
+        centrePane.getChildren().add(redactionLayer);
+
+        // Mouse handlers for redaction layer
+        redactionLayer.setOnMousePressed(this::handleMousePressed);
+        redactionLayer.setOnMouseDragged(this::handleMouseDragged);
+        redactionLayer.setOnMouseReleased(this::handleMouseReleased);
+
         // Add layout to zoomable scroll pane
         scrollPane = new ZoomableScrollPane(centrePane);
 
@@ -142,7 +152,7 @@ public class PDFDocumentView extends Pane {
                 -> scrollPane.setPrefWidth(newVal.doubleValue()));
         this.heightProperty().addListener((obs, oldVal, newVal)
                 -> scrollPane.setPrefHeight(newVal.doubleValue()));
-        
+
         getChildren().add(scrollPane);
     }
 
@@ -178,6 +188,63 @@ public class PDFDocumentView extends Pane {
 
     public void displayCurrentPage() {
         renderPage();
+    }
+
+    public void setRedactionModeActive(boolean active) {
+        this.redactionModeActive = active;
+    }
+
+    public void clearAllRedactions() {
+        redactionLayer.getChildren().clear();
+    }
+
+    public void clearLastRedaction() {
+        if (!redactionLayer.getChildren().isEmpty()) {
+            redactionLayer.getChildren().removeLast();
+        }
+    }
+
+    private void handleMousePressed(MouseEvent event) {
+        System.out.println("Mouse pressed, redactionModeActive: " + redactionModeActive);
+        if (!redactionModeActive) return;
+
+        AnchorX = event.getX();
+        AnchorY = event.getY();
+
+        // Create new redaction rectangle at click position
+        System.out.println("Creating rectangle at: " + event.getX() + ", " + event.getY());
+        currentRedaction = new RedactionTool(
+                event.getX(),
+                event.getY(),
+                pdfController.getCurrentPage()
+        );
+        // Add to redaction layer
+        redactionLayer.getChildren().add(currentRedaction);
+    }
+
+    private void handleMouseDragged(MouseEvent event) {
+        if (!redactionModeActive || currentRedaction == null) return;
+
+        double recX = Math.min(AnchorX, event.getX());
+        double recY = Math.min(AnchorY, event.getY());
+
+        double width = Math.abs(event.getX() - AnchorX);
+        double height = Math.abs(event.getY() - AnchorY);
+
+        currentRedaction.setX(recX);
+        currentRedaction.setY(recY);
+        currentRedaction.setWidth(width);
+        currentRedaction.setHeight(height);
+    }
+
+    private void handleMouseReleased(MouseEvent event) {
+        if (!redactionModeActive || currentRedaction == null) return;
+
+        // If the rectangle is too small, remove it
+        if (currentRedaction.getWidth() < 5 || currentRedaction.getHeight() < 5) {
+            redactionLayer.getChildren().remove(currentRedaction);
+        }
+        currentRedaction = null;
     }
 
     @Override

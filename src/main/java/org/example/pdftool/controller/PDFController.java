@@ -2,7 +2,6 @@ package org.example.pdftool.controller;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 
@@ -23,6 +22,11 @@ public class PDFController {
 
         java.util.logging.Logger.getLogger("org.apache.fontbox.cff.Type1CharString").setLevel(java.util.logging.Level.SEVERE);
         document = Loader.loadPDF(file);
+    }
+
+    public void savePDFDocument(File file) throws IOException {
+        if (document == null) {throw new IllegalStateException("No document has been loaded");}
+        document.save(file);
     }
 
     public PDDocument getDocument() {

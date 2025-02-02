@@ -2,7 +2,9 @@ package org.example.pdftool;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -13,6 +15,7 @@ import javafx.stage.Stage;
 
 import org.example.pdftool.controller.PDFController;
 import org.example.pdftool.view.PDFDocumentView;
+import org.example.pdftool.view.PageCounter;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +24,7 @@ public class PDFToolApp extends Application {
     // Class variables
     private PDFController pdfController;
     private PDFDocumentView documentView;
+    private PageCounter pageCounter;
     private final BorderPane root = new BorderPane();
 
     // Menu variables
@@ -42,6 +46,7 @@ public class PDFToolApp extends Application {
                 pdfController.loadPDFDocument(file);
                 documentView.setupRenderer();
                 documentView.displayCurrentPage();
+                pageCounter.updateLabel();
             } catch (IOException e) {
                 // How to handle error?
                 e.printStackTrace();
@@ -79,14 +84,17 @@ public class PDFToolApp extends Application {
     public void start(Stage stage){
         // Initialise controller
         pdfController = new PDFController();
-        documentView = new PDFDocumentView(pdfController);
+        pageCounter = new PageCounter(pdfController);
+        documentView = new PDFDocumentView(pdfController, pageCounter);
 
         // Create menu
         setupMenuBar();
 
         // Add document view to root
         root.setCenter(documentView);
-        BorderPane.setAlignment(documentView, Pos.CENTER);
+        root.setBottom(pageCounter);
+        // BorderPane.setAlignment(documentView, Pos.CENTER);
+        BorderPane.setMargin(documentView, new Insets(2));
 
         // Event handlers
         openItem.setOnAction(event -> openPDF(stage, root));

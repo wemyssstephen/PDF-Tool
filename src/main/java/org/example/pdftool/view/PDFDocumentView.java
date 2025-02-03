@@ -238,39 +238,6 @@ public class PDFDocumentView extends Pane {
         System.out.println("Mouse pressed, redactionModeActive: " + redactionModeActive);
         if (!redactionModeActive) return;
 
-        // Debug information
-//        Point2D pointInRedactionLayer = new Point2D(event.getX(), event.getY());
-//        Point2D pointInCentrePane = redactionLayer.localToParent(pointInRedactionLayer);
-
-//        try {
-//            PDPage page = pdfController.getDocument().getPage(pdfController.getCurrentPage());
-//            PDRectangle cropBox = page.getCropBox();
-//
-//            // Get bounds of actual image within ImageView
-//            Bounds imageBounds = pdfView.getLayoutBounds();
-//            // Get bounds of viewport
-//            Bounds viewportBounds = scrollPane.getViewportBounds();
-//            // Get our conversion
-//            Point2D pdfCoords = screenToPDFCoordinates(event.getX(), event.getY());
-
-//            System.out.println("\nDebug Coordinate Information:");
-//            System.out.println("Redaction Layer coords: " + new Point2D(event.getX(), event.getY()));
-//            System.out.println("Current zoom: " + scrollPane.scaleValue);
-//            System.out.println("PDF Page dimensions: " +
-//                    cropBox.getWidth() + " x " + cropBox.getHeight());
-//            System.out.println("Image Bounds: " +
-//                    imageBounds.getWidth() + " x " + imageBounds.getHeight());
-//            System.out.println("Viewport Bounds: " +
-//                    viewportBounds.getWidth() + " x " + viewportBounds.getHeight());
-//            System.out.println("Actual Image dimensions: " +
-//                    pdfView.getImage().getWidth() + " x " +
-//                    pdfView.getImage().getHeight());
-//          System.out.println("PDF Coordinates: " + pdfCoords);
-//           System.out.println("Within bounds: " + isWithinPDFBounds(pdfCoords));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
         AnchorX = event.getX();
         AnchorY = event.getY();
 
@@ -317,23 +284,6 @@ public class PDFDocumentView extends Pane {
             Point2D bottomRight = screenToPDFCoordinates(recX + width, recY + height);
             currentRedaction.updatePDFCoordinates(topLeft, bottomRight);
 
-            // Debug prints
-            System.out.println("\nRedaction Created:");
-            System.out.println("Page: " + pdfController.getCurrentPage());
-            System.out.println("Screen coordinates: " +
-                    String.format("(%.2f, %.2f) to (%.2f, %.2f)",
-                            recX, recY, recX + width, recY + height));
-            System.out.println("PDF coordinates: " +
-                    String.format("(%.2f, %.2f) to (%.2f, %.2f)",
-                            topLeft.getX(), topLeft.getY(),
-                            bottomRight.getX(), bottomRight.getY()));
-
-            PDRectangle pdfRect = currentRedaction.getPDFRectangle();
-            System.out.println("PDF Rectangle: " +
-                    String.format("x=%.2f, y=%.2f, width=%.2f, height=%.2f",
-                            pdfRect.getLowerLeftX(), pdfRect.getLowerLeftY(),
-                            pdfRect.getWidth(), pdfRect.getHeight()));
-
             // Store the redaction in our page map
             int currentPage = pdfController.getCurrentPage();
             pageRedactions.computeIfAbsent(currentPage, k -> new ArrayList<>()).add(currentRedaction);
@@ -346,13 +296,6 @@ public class PDFDocumentView extends Pane {
             PDPage page = pdfController.getDocument().getPage(pdfController.getCurrentPage());
             PDRectangle cropBox = page.getCropBox();
 
-            // Get current scaling
-            double scale = pdfView.getImage().getWidth() / cropBox.getWidth();
-
-            // Get image scale factors
-            double imageWidth = pdfView.getImage().getWidth();
-            double imageHeight = pdfView.getImage().getHeight();
-
             // Get bounds of the displayed image
             Bounds imageBounds = pdfView.getLayoutBounds();
 
@@ -363,12 +306,6 @@ public class PDFDocumentView extends Pane {
             // Convert screen coordinates to PDF coordinates
             double pdfX = screenX * scaleX;
             double pdfY = cropBox.getHeight() - (screenY * scaleY);
-
-            System.out.println("\nCoordinate Conversion Debug:");
-            System.out.println("Screen coords: " + screenX + ", " + screenY);
-            System.out.println("Scale factors: " + scaleX + ", " + scaleY);
-            System.out.println("Image bounds: " + imageBounds);
-            System.out.println("PDF scale: " + scale);
 
             return new Point2D(pdfX, pdfY);
         } catch (Exception e) {

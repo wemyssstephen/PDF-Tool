@@ -3,6 +3,7 @@ package org.example.pdftool;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
@@ -12,12 +13,15 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import org.example.pdftool.controller.PDFController;
 import org.example.pdftool.view.PDFDocumentView;
 import org.example.pdftool.view.PageCounter;
+import org.example.pdftool.view.SearchBar;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,20 +31,16 @@ public class PDFToolApp extends Application {
     private PDFController pdfController;
     private PDFDocumentView documentView;
     private PageCounter pageCounter;
+    private SearchBar searchBar;
     private final BorderPane root = new BorderPane();
-
-    // Mode variables
-    private boolean redactModeActive = false;
 
     // Menu variables
     Menu fileMenu = new Menu("File");
     Menu toolsMenu = new Menu("Tools");
+    MenuItem searchTool = new MenuItem("Search");
     MenuItem openItem = new MenuItem("Open PDF...");
     MenuItem saveItem = new MenuItem("Save PDF...");
     MenuItem exitItem = new MenuItem("Exit");
-    MenuItem redactTool = new MenuItem("Redact");
-    MenuItem deleteLastRedaction = new MenuItem("Delete Last Redaction");
-    MenuItem deleteAllRedaction = new MenuItem("Delete All Redactions");
 
     private void openPDF(Stage stage, BorderPane root) {
         FileChooser fileChooser = new FileChooser();
@@ -106,7 +106,7 @@ public class PDFToolApp extends Application {
 
         // Add menus to menu bar
         fileMenu.getItems().addAll(openItem, saveItem, exitItem);
-        toolsMenu.getItems().addAll(redactTool, deleteLastRedaction, deleteAllRedaction);
+        toolsMenu.getItems().addAll(searchTool);
         menuBar.getMenus().addAll(fileMenu, toolsMenu);
 
         // Add menu bar to root
@@ -119,34 +119,34 @@ public class PDFToolApp extends Application {
         pdfController = new PDFController();
         pageCounter = new PageCounter(pdfController);
         documentView = new PDFDocumentView(pdfController, pageCounter);
+        searchBar = new SearchBar(pdfController, documentView);
 
         // Create menu
         setupMenuBar();
 
+        // Create bottom VBox
+        HBox bottomBox = new HBox();
+        bottomBox.setAlignment(Pos.CENTER_RIGHT);
+        bottomBox.setSpacing(10);
+        bottomBox.getChildren().addAll(searchBar, pageCounter);
+        bottomBox.setStyle("-fx-background-color: rgb(50,50,50)");
+        bottomBox.setPadding(new Insets(2));
+
         // Add document view to root
         root.setCenter(documentView);
-        root.setBottom(pageCounter);
+        root.setBottom(bottomBox);
         // BorderPane.setAlignment(documentView, Pos.CENTER);
         BorderPane.setMargin(documentView, new Insets(2));
+
+        // Create the scene
+        Scene scene = new Scene(root, 1200, 1000);
 
         // Event handlers
         openItem.setOnAction(event -> openPDF(stage, root));
         saveItem.setOnAction(event -> savePDF(stage));
-        redactTool.setOnAction(event -> {
-            redactModeActive = !redactModeActive;
-            documentView.setRedactionModeActive(redactModeActive);
-        });
-        deleteLastRedaction.setOnAction(event -> {
-            documentView.clearLastRedaction();
-        });
-        deleteLastRedaction.setAccelerator(new KeyCodeCombination(KeyCode.Z, KeyCombination.CONTROL_DOWN));
-        deleteAllRedaction.setOnAction(event -> {
-            documentView.clearAllRedactions();
-        });
         exitItem.setOnAction(event -> Platform.exit());
-
-        // Create the scene
-        Scene scene = new Scene(root, 1200, 1000);
+        searchTool.setAccelerator(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
+        searchTool.setOnAction(event -> searchBar.toggle());
 
         // Show window
         stage.setTitle("PDF Tool");

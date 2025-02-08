@@ -1,0 +1,90 @@
+.root {
+    -fx-font-family: "JetBrains Mono SemiBold";
+    -fx-background-color: #202124;
+    -fx-text-fill: #e8eaed;
+}
+
+.decorated-window {
+    -fx-background-color: #202124;
+}
+
+.window-buttons {
+    -fx-background-color: #202124;
+}
+
+.menu-bar {
+    -fx-background-color: #292a2d;
+    -fx-padding: 2px;
+}
+
+.menu {
+    -fx-font-family: "JetBrains Mono SemiBold";
+    -fx-padding: 6px 12px;
+    -fx-background-color: transparent;
+}
+
+.menu:hover {
+    -fx-background-color: #1a73e8;
+}
+
+.menu:showing {
+    -fx-background-color: #1a73e8;
+}
+
+.menu .label {
+    -fx-text-fill: #e8eaed;
+}
+
+.menu-item {
+    -fx-font-family: "JetBrains Mono SemiBold";
+    -fx-padding: 10px 20px;
+    -fx-background-color: transparent;
+}
+
+.menu-item:focused {
+    -fx-background-color: #1a73e8;
+}
+
+.menu-item .label {
+    -fx-font-family: "JetBrains Mono SemiBold";
+    -fx-text-fill: #e8eaed;
+}
+
+.context-menu {
+    -fx-background-color: #292a2d;
+    -fx-padding: 4px;
+    -fx-border-width: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 2);
+}
+
+.separator {
+    -fx-padding: 2px 0;
+}
+
+.separator .line {
+    -fx-border-color: #9aa0a6;
+    -fx-border-width: 0.5px;
+}
+
+.button {
+    -fx-font-family: "JetBrains Mono SemiBold";
+    -fx-font-size: 16px;
+    -fx-background-color: #1a73e8;
+    -fx-text-fill: white;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 12px;
+}
+
+.button:hover {
+    -fx-background-color: derive(#1a73e8, 10%);
+}
+
+.text-field {
+    -fx-font-family: "JetBrains Mono SemiBold";
+    -fx-font-size: 13px;
+}
+
+.label {
+    -fx-font-family: "JetBrains Mono SemiBold";
+    -fx-font-size: 13px;
+}

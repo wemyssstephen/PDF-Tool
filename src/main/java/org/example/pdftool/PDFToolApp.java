@@ -14,10 +14,12 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import org.example.pdftool.controller.PDFController;
+import org.example.pdftool.theme.Theme;
 import org.example.pdftool.view.PDFDocumentView;
 import org.example.pdftool.view.PageCounter;
 import org.example.pdftool.view.SearchBar;
@@ -104,6 +106,10 @@ public class PDFToolApp extends Application {
         // Create menu bar
         MenuBar menuBar = new MenuBar();
 
+        // Keyboard shortcuts
+        openItem.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN));
+        saveItem.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN));
+
         // Add menus to menu bar
         fileMenu.getItems().addAll(openItem, saveItem, exitItem);
         toolsMenu.getItems().addAll(searchTool);
@@ -114,45 +120,57 @@ public class PDFToolApp extends Application {
     }
 
     @Override
-    public void start(Stage stage){
-        // Initialise controller
-        pdfController = new PDFController();
-        pageCounter = new PageCounter(pdfController);
-        documentView = new PDFDocumentView(pdfController, pageCounter);
-        searchBar = new SearchBar(pdfController, documentView);
+    public void start(Stage stage) {
+        // stage.initStyle(StageStyle.TRANSPARENT);
 
-        // Create menu
-        setupMenuBar();
+        // Load font
+        Font font = Font.loadFont(getClass().getResourceAsStream("/fonts/JetBrainsMono-SemiBold.ttf"), 13);
+        if (font == null) {
+            System.err.println("Failed to load font");
+        } else {
+            System.out.println("Font loaded: " + font.getFamily());
+        }
 
-        // Create bottom VBox
-        HBox bottomBox = new HBox();
-        bottomBox.setAlignment(Pos.CENTER_RIGHT);
-        bottomBox.setSpacing(10);
-        bottomBox.getChildren().addAll(searchBar, pageCounter);
-        bottomBox.setStyle("-fx-background-color: rgb(50,50,50)");
-        bottomBox.setPadding(new Insets(2));
+            // Initialise controller
+            pdfController = new PDFController();
+            pageCounter = new PageCounter(pdfController);
+            documentView = new PDFDocumentView(pdfController, pageCounter);
+            searchBar = new SearchBar(pdfController, documentView, pageCounter);
 
-        // Add document view to root
-        root.setCenter(documentView);
-        root.setBottom(bottomBox);
-        // BorderPane.setAlignment(documentView, Pos.CENTER);
-        BorderPane.setMargin(documentView, new Insets(2));
+            // Create menu
+            setupMenuBar();
 
-        // Create the scene
-        Scene scene = new Scene(root, 1200, 1000);
+            // Create bottom VBox
+            HBox bottomBox = new HBox();
+            bottomBox.setAlignment(Pos.CENTER_RIGHT);
+            bottomBox.setStyle("-fx-background-color: " + Theme.SURFACE);
+            bottomBox.setSpacing(10);
+            bottomBox.setPadding(new Insets(10, 15, 10, 15));
+            bottomBox.getChildren().addAll(searchBar, pageCounter);
 
-        // Event handlers
-        openItem.setOnAction(event -> openPDF(stage, root));
-        saveItem.setOnAction(event -> savePDF(stage));
-        exitItem.setOnAction(event -> Platform.exit());
-        searchTool.setAccelerator(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
-        searchTool.setOnAction(event -> searchBar.toggle());
 
-        // Show window
-        stage.setTitle("PDF Tool");
-        stage.setScene(scene);
-        stage.show();
-    }
+            // Add document view to root
+            root.setCenter(documentView);
+            root.setBottom(bottomBox);
+            BorderPane.setMargin(documentView, new Insets(2));
+
+            // Create the scene
+            Scene scene = new Scene(root, 2000, 1200);
+            scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+
+            // Event handlers
+            openItem.setOnAction(event -> openPDF(stage, root));
+            saveItem.setOnAction(event -> savePDF(stage));
+            exitItem.setOnAction(event -> Platform.exit());
+            searchTool.setAccelerator(new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN));
+            searchTool.setOnAction(event -> searchBar.toggle());
+
+            // Show window
+            stage.setTitle("PDF Tool");
+            stage.setScene(scene);
+            stage.show();
+        }
+
 
     public static void main(String[] args) {
         launch();

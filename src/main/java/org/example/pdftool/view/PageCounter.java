@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import org.example.pdftool.controller.PDFController;
+import org.example.pdftool.theme.Theme;
 
 public class PageCounter extends HBox {
     private final Label pageLabel;
@@ -14,12 +15,21 @@ public class PageCounter extends HBox {
         this.pdfController = pdfController;
 
         pageLabel = new Label("No document loaded.");
-        pageLabel.setStyle("-fx-text-fill: white; -fx-background-color: rgba(0,0,0,0.5); -fx-padding: 5px");
+        pageLabel.setStyle(String.format("""
+                -fx-text-fill: %s;
+                -fx-background-color: %s;
+                -fx-background-radius: 4px;
+                -fx-padding: 8px 12px;
+                -fx-font-size: 13px;
+                """,
+                Theme.TEXT_PRIMARY,
+                Theme.SURFACE
+        ));
 
         this.getChildren().add(pageLabel);
         this.setAlignment(Pos.CENTER_RIGHT);
         this.setPadding(new Insets(5));
-        this.setStyle("-fx-background-color: rgba(50,50,50);");
+        this.setStyle("-fx-background-color: transparent;");
     }
 
     public void updateLabel() {

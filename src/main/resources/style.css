@@ -14,12 +14,13 @@
 
 .menu-bar {
     -fx-background-color: #292a2d;
-    -fx-padding: 2px;
+    -fx-padding: 10px;
 }
 
 .menu {
     -fx-font-family: "JetBrains Mono SemiBold";
-    -fx-padding: 6px 12px;
+    -fx-font-size: 16px;
+    -fx-padding: 10px 25px;
     -fx-background-color: transparent;
 }
 
@@ -37,7 +38,7 @@
 
 .menu-item {
     -fx-font-family: "JetBrains Mono SemiBold";
-    -fx-padding: 10px 20px;
+    -fx-padding: 25px 30px;
     -fx-background-color: transparent;
 }
 
@@ -81,10 +82,10 @@
 
 .text-field {
     -fx-font-family: "JetBrains Mono SemiBold";
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
 }
 
 .label {
     -fx-font-family: "JetBrains Mono SemiBold";
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
 }

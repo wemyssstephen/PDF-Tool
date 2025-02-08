@@ -11,6 +11,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.example.pdftool.controller.PDFController;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -148,12 +149,38 @@ public class PDFDocumentView extends Pane {
             PDPage page = pdfController.getDocument().getPage(pdfController.getCurrentPage());
             PDRectangle cropBox = page.getCropBox();
 
-            // Calculate dimensions
-            double width = cropBox.getWidth();
-            double height = cropBox.getHeight();
+            System.out.println("PDF page height: " + cropBox.getHeight());
 
             // Render PDF page to BufferedImage
             BufferedImage pdfImage = renderer.renderImageWithDPI(pdfController.getCurrentPage(), 144);
+            System.out.println("Image height: " + pdfImage.getHeight());
+
+            // Graphics for highlighting
+            Graphics2D g2d = pdfImage.createGraphics();
+            g2d.setColor(new Color(1, 133, 204, 128));
+
+            // Draw highlights for any search results on this page
+            for (PDFController.PDFSearchResult result : PDFController.currentSearchResults) {
+                /* Something very strange is happening. When I subtract rectHeight from "y" below,
+                   it causes the rectangle to be drawn from the bottom left and up. If I don't subtract, it draws down
+                   and to the right as expected. I have no idea why. It means I can't properly manipulate the highlight
+                   to be in a better place. This works for now.
+                */
+
+                if (result.pageNumber() == pdfController.getCurrentPage()) {
+                    PDRectangle position = result.position();
+
+                    double scale = 144.0 / 72.0;
+                    int x = (int) (position.getLowerLeftX() * scale);
+                    int y = (int) ((position.getLowerLeftY() - position.getHeight() - 2) * scale);
+                    int rectWidth = (int) (position.getWidth() * scale);
+                    int rectHeight = (int) ((position.getHeight() * scale) * 1.5);
+
+                    g2d.fillRect(x, y, rectWidth, rectHeight);
+                }
+            }
+
+            g2d.dispose();
 
             // Convert to JavaFX Image
             WritableImage fxImage = SwingFXUtils.toFXImage(pdfImage, null);
@@ -173,10 +200,5 @@ public class PDFDocumentView extends Pane {
 
     public void displayCurrentPage() {
         renderPage();
-    }
-
-    @Override
-    protected void layoutChildren() {
-        super.layoutChildren();
     }
 }

@@ -60,13 +60,11 @@ public class SearchBar extends HBox {
 
         // Hide by default
         this.setVisible(false);
-        // this.setManaged(false);
 
         // Search functionality
         searchField.setOnKeyPressed(event -> {
-            System.out.println("Key pressed: " + event.getCode());
             if (event.getCode() == KeyCode.ENTER) {
-                System.out.println("Enter pressed - performing search");
+                System.out.println("Performing search...");
                 performSearch();
             }
         });
@@ -99,8 +97,8 @@ public class SearchBar extends HBox {
     private void showNextResult() {
         PDFController.PDFSearchResult result = pdfController.getNextSearchResult();
         if (result != null) {
-            System.out.println("Moving to result on page " + result.getPageNumber());
-            pdfController.setCurrentPage(result.getPageNumber());
+            System.out.println("Moving to result on page " + result.pageNumber());
+            pdfController.setCurrentPage(result.pageNumber());
             updateResultCount();
             documentView.displayCurrentPage();
         }
@@ -109,8 +107,8 @@ public class SearchBar extends HBox {
     private void showPreviousResult() {
         PDFController.PDFSearchResult result = pdfController.getPreviousSearchResult();
         if (result != null) {
-            System.out.println("Moving to result on page " + result.getPageNumber());
-            pdfController.setCurrentPage(result.getPageNumber());
+            System.out.println("Moving to result on page " + result.pageNumber());
+            pdfController.setCurrentPage(result.pageNumber());
             updateResultCount();
             documentView.displayCurrentPage();
         }
@@ -124,7 +122,6 @@ public class SearchBar extends HBox {
             resultCount.setText(current + " of " + results.size());
         }
     }
-
 
     public void toggle() {
         isVisible = !isVisible;

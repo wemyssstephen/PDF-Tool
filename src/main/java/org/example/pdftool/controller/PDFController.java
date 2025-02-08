@@ -5,7 +5,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
-
+import org.apache.pdfbox.text.TextPosition;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +17,7 @@ public class PDFController {
     private PDDocument document;
     private int currentPage = 0;
 
-    private List<PDFSearchResult> currentSearchResults;
+    public static List<PDFSearchResult> currentSearchResults;
     private int currentSearchIndex;
 
     public PDFController() {
@@ -25,19 +25,61 @@ public class PDFController {
         currentSearchIndex = -1;
     }
 
-    public class PDFSearchResult {
-        private final int pageNumber;
-        private final String text;
-        private final PDRectangle position;
+    private static class PositionalTextStripper extends PDFTextStripper {
+        private final String searchTerm;
+        private final List<PDFSearchResult> results;
+        private final int pageNum;
 
-        public PDFSearchResult(int pageNumber, String text, PDRectangle position) {
-            this.pageNumber = pageNumber;
-            this.text = text;
-            this.position = position;
+        public PositionalTextStripper(String searchTerm, List<PDFSearchResult> results, int pageNum) {
+            this.searchTerm = searchTerm.toLowerCase();
+            this.results = results;
+            this.pageNum = pageNum;
+            setSortByPosition(true);
         }
-        public int getPageNumber() {return pageNumber;}
-        public String getText() {return text;}
-        public PDRectangle getPosition() {return position;}
+
+        @Override
+        protected void writeString(String text, List<TextPosition> textPositions) {
+            String lowerCaseText = text.toLowerCase();
+            int startIndex = lowerCaseText.indexOf(searchTerm);
+
+            if (startIndex != -1) {
+                System.out.println("Found a match for: " + searchTerm);
+
+                int endIndex = startIndex + searchTerm.length();
+
+                // Find text position of matching word
+                TextPosition startPosition = null;
+                TextPosition endPosition = null;
+                int currentIndex = 0;
+
+                for (TextPosition pos : textPositions) {
+                    if (currentIndex == startIndex) {
+                        startPosition = pos;
+                    }
+                    if (currentIndex == endIndex - 1) {
+                        endPosition = pos;
+                        break;
+                    }
+                    currentIndex += pos.getUnicode().length();
+                }
+
+                // If we have good positions, store the position in a box
+                if (startPosition != null && endPosition != null) {
+                    PDRectangle position = new PDRectangle(
+                            startPosition.getXDirAdj(),
+                            startPosition.getYDirAdj(),
+                            endPosition.getXDirAdj() + endPosition.getWidth() - startPosition.getXDirAdj(),
+                            startPosition.getHeight()
+                    );
+                    results.add(new PDFSearchResult(pageNum, text.substring(startIndex, endIndex), position));
+                    System.out.println("Result size: " + results.size());
+                }
+            }
+        }
+    }
+
+
+    public record PDFSearchResult(int pageNumber, String text, PDRectangle position) {
     }
 
     public List<PDFSearchResult> searchText(String searchTerm) throws IOException {
@@ -47,23 +89,18 @@ public class PDFController {
             return Collections.emptyList();
         }
 
-        currentSearchResults.clear();
+        clearSearchResults();
         currentSearchIndex = -1;
 
-        PDFTextStripper stripper = new PDFTextStripper();
-
         for (int pageNum = 0; pageNum < document.getNumberOfPages(); pageNum++) {
-            stripper.setStartPage(pageNum);
+            PositionalTextStripper stripper = new PositionalTextStripper(
+                    searchTerm,
+                    currentSearchResults,
+                    pageNum
+            );
+            stripper.setStartPage(pageNum + 1);
             stripper.setEndPage(pageNum + 1);
-            String pageText = stripper.getText(document);
-
-            if (pageText.toLowerCase().contains(searchTerm.toLowerCase())) {
-                currentSearchResults.add(new PDFSearchResult(
-                        pageNum,
-                        searchTerm,
-                        new PDRectangle(0,0,10,20)
-                ));
-            }
+            stripper.getText(document);
         }
         return currentSearchResults;
     }
@@ -78,6 +115,10 @@ public class PDFController {
         if (currentSearchResults.isEmpty()) return null;
         currentSearchIndex = (currentSearchIndex - 1) % currentSearchResults.size();
         return currentSearchResults.get(currentSearchIndex);
+    }
+
+    public void clearSearchResults() {
+        currentSearchResults.clear();
     }
 
     public List<PDFSearchResult> getCurrentSearchResults() {
@@ -120,8 +161,9 @@ public class PDFController {
     }
 
     public void setCurrentPage(int currentPage) {
-        if (document != null && currentPage < document.getNumberOfPages() && currentPage >= 0) {}
-        this.currentPage = currentPage;
+        if (document != null && currentPage < document.getNumberOfPages() && currentPage >= 0) {
+            this.currentPage = currentPage;
+        }
     }
 
     public int nextPage() {

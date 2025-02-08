@@ -149,11 +149,8 @@ public class PDFDocumentView extends Pane {
             PDPage page = pdfController.getDocument().getPage(pdfController.getCurrentPage());
             PDRectangle cropBox = page.getCropBox();
 
-            System.out.println("PDF page height: " + cropBox.getHeight());
-
             // Render PDF page to BufferedImage
             BufferedImage pdfImage = renderer.renderImageWithDPI(pdfController.getCurrentPage(), 144);
-            System.out.println("Image height: " + pdfImage.getHeight());
 
             // Graphics for highlighting
             Graphics2D g2d = pdfImage.createGraphics();

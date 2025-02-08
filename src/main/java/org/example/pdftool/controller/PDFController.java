@@ -136,7 +136,6 @@ public class PDFController {
 
     public void loadPDFDocument(File file) throws IOException {
         if (document != null) {document.close();}
-
         java.util.logging.Logger.getLogger("org.apache.fontbox.cff.Type1CharString").setLevel(java.util.logging.Level.SEVERE);
         document = Loader.loadPDF(file);
     }

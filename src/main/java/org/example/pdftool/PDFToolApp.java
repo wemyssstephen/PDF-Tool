@@ -51,6 +51,7 @@ public class PDFToolApp extends Application {
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
             try {
+                pdfController.clearSearchResults();
                 pdfController.loadPDFDocument(file);
                 documentView.setupRenderer();
                 documentView.displayCurrentPage();

@@ -1,7 +1,7 @@
 ## A Modern PDF Tool
 A modern PDF viewer built with JavaFX and Apache PDFBox. This was made as a vehicle
 to get more comfortable with Java and to supplement my learning 
-while studying for an MSc in Computer Science.
+while studying for an MSc in Computer Science. I'm doing it, Dad.
 
 ### Features
 - Clean interface
